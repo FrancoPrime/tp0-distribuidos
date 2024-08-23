@@ -195,3 +195,13 @@ Se modificó la estructura del cliente y servidor para minimizar la cantidad de 
 `./make docker-compose-up` 
 
 y verificar que todo permanece cacheado, a diferencia de modificar código.
+
+### Ejercicio 3
+
+Para correr el script, se deberá invocar sobre el directorio raíz estos comandos:
+
+```
+sudo make docker-compose-up
+sudo docker build --tag 'validar-echo-server' .
+sudo docker run --network tp0_testing_net 'validar-echo-server'
+```
