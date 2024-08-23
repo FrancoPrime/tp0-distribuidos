@@ -187,3 +187,11 @@ Finalmente, se pide a los alumnos leer atentamente y **tener en cuenta** los cri
 El script contiene a los archivos generar-compose.sh, docker-compose-base.yaml y compose-creator.py. Recibirá por parámetro el nombre del archivo de salida y la cantidad de clientes esperados:
 
 `./generar-compose.sh docker-compose-dev.yaml 5`
+
+### Ejercicio 2
+
+Se modificó la estructura del cliente y servidor para minimizar la cantidad de capas a cachear. Para correrlo modificar las configuraciones mientras se corre
+
+`./make docker-compose-up` 
+
+y verificar que todo permanece cacheado, a diferencia de modificar código.
