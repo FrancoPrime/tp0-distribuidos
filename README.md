@@ -178,3 +178,12 @@ Cada ejercicio deberá resolverse en una rama independiente con nombres siguiend
 Puden obtener un listado del último commit de cada rama ejecutando `git ls-remote`.
 
 Finalmente, se pide a los alumnos leer atentamente y **tener en cuenta** los criterios de corrección provistos [en el campus](https://campusgrado.fi.uba.ar/mod/page/view.php?id=73393).
+
+
+## Como ejecutar cada ejercicio:
+
+### Ejercicio 1
+
+El script contiene a los archivos generar-compose.sh, docker-compose-base.yaml y compose-creator.py. Recibirá por parámetro el nombre del archivo de salida y la cantidad de clientes esperados:
+
+`./generar-compose.sh docker-compose-dev.yaml 5`
