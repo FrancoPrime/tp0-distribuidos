@@ -24,6 +24,7 @@ type Client struct {
 	config ClientConfig
 	conn   net.Conn
 	running bool
+	abort chan struct{}
 }
 
 // NewClient Initializes a new client receiving the configuration
@@ -32,6 +33,7 @@ func NewClient(config ClientConfig) *Client {
 	client := &Client{
 		config: config,
 		running: true,
+		abort: make(chan struct{}),
 	}
 	return client
 }
@@ -53,15 +55,23 @@ func (c *Client) createClientSocket() error {
 }
 
 func (c *Client) StopClientLoop() {
+	log.Infof("action: stop_client | result: in_progress | client_id: %v",
+		c.config.ID,
+	)
 	c.running = false
+	close(c.abort)
 }
 
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop() {
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
+out:
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
 		if !c.running {
+			log.Infof("action: stop_client | result: success | client_id: %v",
+				c.config.ID,
+			)
 			break
 		}
 		// Create the connection the server in every loop iteration. Send an
@@ -90,11 +100,15 @@ func (c *Client) StartClientLoop() {
 			msg,
 		)
 
-		if !c.running {
-			break
+		select {
+		case <-time.After(c.config.LoopPeriod):
+			// Sleep period is over, proceed with the next iteration
+		case <-c.abort:
+			log.Infof("action: stop_client | result: success | client_id: %v",
+				c.config.ID,
+			)
+			break out
 		}
-		// Wait a time between sending one message and the next one
-		time.Sleep(c.config.LoopPeriod)
 
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)

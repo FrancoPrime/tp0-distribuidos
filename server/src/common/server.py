@@ -22,6 +22,7 @@ class Server:
         while self.running:
             client_sock = self.__accept_new_connection()
             if not self.running:
+                logging.info('action: stop_server | result: success')
                 break
             self.__handle_client_connection(client_sock)
 
@@ -54,7 +55,11 @@ class Server:
 
         # Connection arrived
         logging.info('action: accept_connections | result: in_progress')
-        c, addr = self._server_socket.accept()
+        try:
+            c, addr = self._server_socket.accept()
+        except Exception as e:
+            logging.error(f'action: accept_connections | result: fail | error: {e}')
+            return None
         logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
         return c
 
@@ -63,7 +68,9 @@ class Server:
         Stop the server
         """
 
+        logging.info('action: stop_server | result: in_progress')
         self.running = False
+        logging.info('action: closing socket | result: in_progress')
         self._server_socket.shutdown(socket.SHUT_RDWR)
         self._server_socket.close()
-        logging.info('action: stop_server | result: success')
+        logging.info('action: closing socket | result: success')
