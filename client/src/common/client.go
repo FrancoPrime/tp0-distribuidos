@@ -23,6 +23,7 @@ type ClientConfig struct {
 type Client struct {
 	config ClientConfig
 	conn   net.Conn
+	running bool
 }
 
 // NewClient Initializes a new client receiving the configuration
@@ -30,6 +31,7 @@ type Client struct {
 func NewClient(config ClientConfig) *Client {
 	client := &Client{
 		config: config,
+		running: true,
 	}
 	return client
 }
@@ -50,11 +52,18 @@ func (c *Client) createClientSocket() error {
 	return nil
 }
 
+func (c *Client) StopClientLoop() {
+	c.running = false
+}
+
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop() {
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
+		if !c.running {
+			break
+		}
 		// Create the connection the server in every loop iteration. Send an
 		c.createClientSocket()
 
@@ -81,6 +90,9 @@ func (c *Client) StartClientLoop() {
 			msg,
 		)
 
+		if !c.running {
+			break
+		}
 		// Wait a time between sending one message and the next one
 		time.Sleep(c.config.LoopPeriod)
 

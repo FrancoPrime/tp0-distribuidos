@@ -3,6 +3,7 @@
 from configparser import ConfigParser
 from common.server import Server
 import logging
+import signal
 import os
 
 
@@ -49,6 +50,7 @@ def main():
 
     # Initialize server and start server loop
     server = Server(port, listen_backlog)
+    signal.signal(signal.SIGTERM, lambda _n,_f: server.stop())
     server.run()
 
 def initialize_log(logging_level):

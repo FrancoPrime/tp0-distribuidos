@@ -90,6 +90,13 @@ func PrintConfig(v *viper.Viper) {
 	)
 }
 
+
+func handleSignals(sigChan chan os.Signal, client *common.Client) {
+	sig := <-sigChan
+	log.Infof("Received signal: %s. Stopping client", sig)
+	client.StopClientLoop()
+}
+
 func main() {
 	v, err := InitConfig()
 	if err != nil {
@@ -111,5 +118,8 @@ func main() {
 	}
 
 	client := common.NewClient(clientConfig)
+	sigChan := make(chan os.Signal, 1)
+	go handleSignals(sigChan, client)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	client.StartClientLoop()
 }
