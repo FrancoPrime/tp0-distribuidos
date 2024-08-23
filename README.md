@@ -205,3 +205,20 @@ sudo make docker-compose-up
 sudo docker build --tag 'validar-echo-server' .
 sudo docker run --network tp0_testing_net 'validar-echo-server'
 ```
+
+### Ejercicio 4
+
+
+Utilizar
+
+```
+sudo make docker-compose-up
+sudo make docker-compose-stop
+sudo docker ps -a
+```
+
+Y tras obtener el ID del container que se desee verificar, utilizar:
+
+`sudo docker logs <CONTAINER_ID>`
+
+Observar que al detener un servicio, este cierra gracefully, informando los recursos cerrados.
