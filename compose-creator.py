@@ -16,6 +16,9 @@ def generate_client(index):
             ],
             'depends_on': [
                 'server'
+            ],
+            'volumes': [
+                './client/config.yaml:/config.yaml'
             ]
         }
     }
