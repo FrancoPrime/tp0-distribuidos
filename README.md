@@ -222,3 +222,18 @@ Y tras obtener el ID del container que se desee verificar, utilizar:
 `sudo docker logs <CONTAINER_ID>`
 
 Observar que al detener un servicio, este cierra gracefully, informando los recursos cerrados.
+
+### Ejercicio 5
+
+Primero es necesario generar un docker compose dev con las variables de entorno necesarias. Para eso correr:
+
+`./generar-compose.sh docker-compose-dev.yaml [Cantidad de clientes]`
+
+Luego correr
+
+```
+sudo make docker-compose-up
+sudo make docker-compose-logs
+```
+
+Y observar los logs que informan sobre las apuestas
