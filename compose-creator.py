@@ -1,7 +1,20 @@
 import yaml
 import argparse
+import random
+
+names = ['Alejandro', 'Franco', 'Javier', 'Luis', 'Miguel', 'Ricardo', 'Roberto', 'Rodrigo', 'Santiago', 'Sebastian']
+surnames = ['Alvarez', 'Gonzalez', 'Hernandez', 'Lopez', 'Martinez', 'Perez', 'Ramirez', 'Rodriguez', 'Sanchez', 'Torres']
+
+def getRandomName():
+    return f'{random.choice(names)}'
+
+def getRandomSurname():
+    return f'{random.choice(surnames)}'
 
 def generate_client(index):
+    year = random.randint(1925, 2005)
+    month = str(random.randint(1, 12)).zfill(2)
+    day = str(random.randint(1, 31)).zfill(2)
     return {
         f'client{index}': {
             'container_name': f'client{index}',
@@ -9,7 +22,12 @@ def generate_client(index):
             'entrypoint': '/client',
             'environment': [
                 f'CLI_ID={index}',
-                'CLI_LOG_LEVEL=DEBUG'
+                'CLI_LOG_LEVEL=DEBUG',
+                f'NOMBRE={getRandomName()}',
+                f'APELLIDO={getRandomSurname()}',
+                f'DOCUMENTO={random.randint(10000000, 99999999)}',
+                f'NACIMIENTO={year}-{month}-{day}',
+                f'NUMERO={random.randint(1000, 9999)}'
             ],
             'networks': [
                 'testing_net'

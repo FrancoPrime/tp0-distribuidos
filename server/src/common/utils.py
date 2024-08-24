@@ -24,6 +24,10 @@ class Bet:
         self.birthdate = datetime.date.fromisoformat(birthdate)
         self.number = int(number)
 
+    def fromJSON(json: dict) -> 'Bet':
+        return Bet(json['id'], json['nombre'], json['apellido'],
+                   json['documento'], json['nacimiento'], json['numero'])
+
 """ Checks whether a bet won the prize or not. """
 def has_won(bet: Bet) -> bool:
     return bet.number == LOTTERY_WINNER_NUMBER

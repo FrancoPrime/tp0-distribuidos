@@ -14,6 +14,11 @@ services:
     environment:
     - CLI_ID=1
     - CLI_LOG_LEVEL=DEBUG
+    - NOMBRE=Franco
+    - APELLIDO=Rodriguez
+    - DOCUMENTO=76547719
+    - NACIMIENTO=1969-12-30
+    - NUMERO=8502
     image: client:latest
     networks:
     - testing_net
@@ -27,6 +32,29 @@ services:
     environment:
     - CLI_ID=2
     - CLI_LOG_LEVEL=DEBUG
+    - NOMBRE=Roberto
+    - APELLIDO=Perez
+    - DOCUMENTO=53239295
+    - NACIMIENTO=1979-11-18
+    - NUMERO=6139
+    image: client:latest
+    networks:
+    - testing_net
+    volumes:
+    - ./client/config.yaml:/config.yaml
+  client3:
+    container_name: client3
+    depends_on:
+    - server
+    entrypoint: /client
+    environment:
+    - CLI_ID=3
+    - CLI_LOG_LEVEL=DEBUG
+    - NOMBRE=Roberto
+    - APELLIDO=Alvarez
+    - DOCUMENTO=94910283
+    - NACIMIENTO=1996-09-09
+    - NUMERO=2416
     image: client:latest
     networks:
     - testing_net
