@@ -47,9 +47,8 @@ class Server:
     def __check_winners(self):
         if all(value == True for value in self.agencies.values()):
             logging.info('action: sorteo | result: success')
-            with self.bets_lock:
-                bets = list(load_bets())
-                self.winners = [bet for bet in bets if has_won(bet)]
+            bets = list(load_bets())
+            self.winners = [bet for bet in bets if has_won(bet)]
 
     def __handle_client_connection(self, client_sock):
         """
@@ -64,12 +63,14 @@ class Server:
 
                 if msg.startswith(ExitMessage):
                     logging.info('Agency finished')
-                    self.agencies[msg[len(ExitMessage):]] = True
-                    self.__check_winners()
+                    with self.bets_lock:
+                        self.agencies[msg[len(ExitMessage):]] = True
+                        self.__check_winners()
                     break
                 
                 if msg.startswith(WinnersMessage):
-                    self.__process_winners_message(client_sock, msg[len(WinnersMessage):])
+                    with self.bets_lock:
+                        self.__process_winners_message(client_sock, msg[len(WinnersMessage):])
                     return
                 try:
                     bets = Bet.fromJSON(json.loads(msg))
