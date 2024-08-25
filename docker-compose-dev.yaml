@@ -14,16 +14,12 @@ services:
     environment:
     - CLI_ID=1
     - CLI_LOG_LEVEL=DEBUG
-    - NOMBRE=Franco
-    - APELLIDO=Rodriguez
-    - DOCUMENTO=76547719
-    - NACIMIENTO=1969-12-30
-    - NUMERO=8502
     image: client:latest
     networks:
     - testing_net
     volumes:
     - ./client/config.yaml:/config.yaml
+    - ./.data/agency-1.csv:/agency.csv
   client2:
     container_name: client2
     depends_on:
@@ -32,16 +28,12 @@ services:
     environment:
     - CLI_ID=2
     - CLI_LOG_LEVEL=DEBUG
-    - NOMBRE=Roberto
-    - APELLIDO=Perez
-    - DOCUMENTO=53239295
-    - NACIMIENTO=1979-11-18
-    - NUMERO=6139
     image: client:latest
     networks:
     - testing_net
     volumes:
     - ./client/config.yaml:/config.yaml
+    - ./.data/agency-2.csv:/agency.csv
   client3:
     container_name: client3
     depends_on:
@@ -50,16 +42,40 @@ services:
     environment:
     - CLI_ID=3
     - CLI_LOG_LEVEL=DEBUG
-    - NOMBRE=Roberto
-    - APELLIDO=Alvarez
-    - DOCUMENTO=94910283
-    - NACIMIENTO=1996-09-09
-    - NUMERO=2416
     image: client:latest
     networks:
     - testing_net
     volumes:
     - ./client/config.yaml:/config.yaml
+    - ./.data/agency-3.csv:/agency.csv
+  client4:
+    container_name: client4
+    depends_on:
+    - server
+    entrypoint: /client
+    environment:
+    - CLI_ID=4
+    - CLI_LOG_LEVEL=DEBUG
+    image: client:latest
+    networks:
+    - testing_net
+    volumes:
+    - ./client/config.yaml:/config.yaml
+    - ./.data/agency-4.csv:/agency.csv
+  client5:
+    container_name: client5
+    depends_on:
+    - server
+    entrypoint: /client
+    environment:
+    - CLI_ID=5
+    - CLI_LOG_LEVEL=DEBUG
+    image: client:latest
+    networks:
+    - testing_net
+    volumes:
+    - ./client/config.yaml:/config.yaml
+    - ./.data/agency-5.csv:/agency.csv
   server:
     container_name: server
     entrypoint: python3 /main.py

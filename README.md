@@ -237,3 +237,13 @@ sudo make docker-compose-logs
 ```
 
 Y observar los logs que informan sobre las apuestas
+
+### Ejercicio 6
+
+Primero es necesario descomprimir los datasets, para eso ubicarse sobre la carpeta .data y ejecutar:
+
+`unzip dataset.csv`
+
+Luego, generar 5 clientes con:
+
+`./generar-compose.sh docker-compose-dev.yaml 5`

@@ -5,6 +5,8 @@ from .communication import receive_message, send_message
 from .utils import Bet, store_bets
 
 SuccessMessage = "success"
+ExitMessage = "exit"
+ErrorMessage = "error"
 
 class Server:
     def __init__(self, port, listen_backlog):
@@ -38,18 +40,23 @@ class Server:
         client socket will also be closed
         """
         try:
-            msg = receive_message(client_sock)
-            addr = client_sock.getpeername()
-            logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
-            
-            bet = Bet.fromJSON(json.loads(msg))
-            store_bets([bet])
+            while True:
+                msg = receive_message(client_sock)
 
-            logging.info(f'action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}')
+                if msg == ExitMessage:
+                    break
+                
+                bets = Bet.fromJSON(json.loads(msg))
+                store_bets(bets)
 
-            send_message(client_sock, SuccessMessage)
+                logging.info(f'action: apuesta_recibida | result: success | cantidad: {len(bets)}')
+
+                send_message(client_sock, SuccessMessage)
+        except ConnectionResetError:
+            logging.info('Client disconnected')
         except Exception as e:
-            logging.error(f"action: receive_message | result: fail | error: {e}")
+            logging.info(f'action: apuesta_recibida | result: fail | cantidad: 0')
+            send_message(client_sock, ErrorMessage)
         finally:
             client_sock.close()
 

@@ -8,7 +8,6 @@ STORAGE_FILEPATH = "./bets.csv"
 """ Simulated winner number in the lottery contest. """
 LOTTERY_WINNER_NUMBER = 7574
 
-
 """ A lottery bet registry. """
 class Bet:
     def __init__(self, agency: str, first_name: str, last_name: str, document: str, birthdate: str, number: str):
@@ -24,10 +23,11 @@ class Bet:
         self.birthdate = datetime.date.fromisoformat(birthdate)
         self.number = int(number)
 
-    def fromJSON(json: dict) -> 'Bet':
-        return Bet(json['id'], json['nombre'], json['apellido'],
-                   json['documento'], json['nacimiento'], json['numero'])
-
+    def fromJSON(json_list: list) -> list['Bet']:
+        return [Bet(item['id'], item['nombre'], item['apellido'],
+                    item['documento'], item['nacimiento'], item['numero'])
+                for item in json_list]
+        
 """ Checks whether a bet won the prize or not. """
 def has_won(bet: Bet) -> bool:
     return bet.number == LOTTERY_WINNER_NUMBER

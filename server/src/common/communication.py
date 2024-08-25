@@ -15,6 +15,6 @@ def receive_message(client_sock):
 
 def send_message(client_sock, message):
     message = message.encode('utf-8')
-    message_length = str(len(message)).zfill(2).encode()
+    message_length = len(message).to_bytes(2, byteorder='big')
     client_sock.sendall(message_length)
     client_sock.sendall(message)

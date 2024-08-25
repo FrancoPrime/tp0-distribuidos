@@ -7,19 +7,22 @@ import (
 	"net"
 )
 
-func sendMessage(conn net.Conn, bet Bet) error {
-	betJSONBytes, err := json.Marshal(bet)
+func sendBets(conn net.Conn, batch []Bet) error {
+	betBatchJSONBytes, err := json.Marshal(batch)
 	if err != nil {
 		return fmt.Errorf("failed to jsonify bet: %w", err)
 	}
+	return sendMessage(conn, string(betBatchJSONBytes))
+}
 
+func sendMessage(conn net.Conn, content string) error {
 	lengthBytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(lengthBytes, uint16(len(betJSONBytes)))
-	betJSONBytes = append(lengthBytes, betJSONBytes...)
+	binary.BigEndian.PutUint16(lengthBytes, uint16(len(content)))
+	bytes := append(lengthBytes, content...)
 
-	remaining := len(betJSONBytes)
+	remaining := len(bytes)
 	for remaining > 0 {
-		bytesWritten, err := conn.Write(betJSONBytes[len(betJSONBytes)-remaining:])
+		bytesWritten, err := conn.Write(bytes[len(bytes)-remaining:])
 		if err != nil {
 			return fmt.Errorf("failed to write to connection: %w", err)
 		}
@@ -29,6 +32,7 @@ func sendMessage(conn net.Conn, bet Bet) error {
 
 	return nil
 }
+
 func receiveMessage(conn net.Conn) (string, error) {
 	// Read the 2-byte length field
 	lengthBytes := make([]byte, 2)
