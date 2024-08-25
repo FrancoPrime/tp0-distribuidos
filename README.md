@@ -260,3 +260,7 @@ Y observar como se procesan las apuestas
 ### Ejercicio 7
 
 Realizar los mismos pasos que en el ejercicio 6. Esta vez, al finalizar se observará que cada agencia imprime cuantos ganadores tuvo.
+
+## Protocolo de comunicación implementado
+
+Esta sección será desarrollada en la branch ej7
