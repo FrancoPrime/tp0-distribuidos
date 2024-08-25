@@ -261,6 +261,14 @@ Y observar como se procesan las apuestas
 
 Realizar los mismos pasos que en el ejercicio 6. Esta vez, al finalizar se observará que cada agencia imprime cuantos ganadores tuvo.
 
+### Ejercicio 8
+
+Para correr, utilizar
+
+`make sudo docker-compose-up`
+
+Y observar que se procesan multiples clientes al mismo tiempo.
+
 ## Protocolo de comunicación implementado
 
 El protocolo de comunicación está constituido de la siguiente manera:
@@ -281,3 +289,7 @@ En caso de que un mensaje no sea ninguno de los casos de arriba, se interpretar�
 
 - El string libre que envia el cliente al servidor se trata de un array de apuestas en formato json.
 - El string libre que envia el servidor al cliente se trata de un array de documentos(strings) en formato json.
+
+## Mecanismos de sincronización utilizados
+
+Para realizar la concurrencia de múltiples clientes, se genera un thread para cada conexión nueva, de modo que la escucha de nuevas conexiones no se ve bloqueada. A la hora de sincronizar estos threads, se utiliza memoria mutable compartida, protegida tras un lock. Cuando un thread necesita acceder a un recurso compartido (que en este caso sería el diccionario de agencias que terminaron, y el archivo de apuestas), realiza un lock sobre el mutex `bets_lock` lo que le permite utilizar los recursos sin que ningún otro thread acceda a ellos al mismo tiempo.
