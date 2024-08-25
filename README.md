@@ -263,4 +263,21 @@ Realizar los mismos pasos que en el ejercicio 6. Esta vez, al finalizar se obser
 
 ## Protocolo de comunicación implementado
 
-Esta sección será desarrollada en la branch ej7
+El protocolo de comunicación está constituido de la siguiente manera:
+
+Todos los mensajes tienen 2 bytes iniciales que contienen la longitud del mensaje. De este modo el receptor sabe que debe leer siempre 2 bytes y luego una longitud variable indicada.
+
+Hay mensajes especiales:
+
+**"exit[ID]"**: Indica que una agencia ha terminado de enviar sus apuestas.
+
+**"winners[ID]"**: Solicita los ganadores del sorteo para una determinada agencia.
+
+**"error"**: Indica que se ha producido un error.
+
+**"success"**: Indica que una operación ha sido exitosa.
+
+En caso de que un mensaje no sea ninguno de los casos de arriba, se interpretará como un string libre:
+
+- El string libre que envia el cliente al servidor se trata de un array de apuestas en formato json.
+- El string libre que envia el servidor al cliente se trata de un array de documentos(strings) en formato json.
