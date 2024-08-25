@@ -13,6 +13,7 @@ import (
 
 const ExitMessage = "exit"
 const ErrorMessage = "error"
+const CheckWinnersMessage = "winners"
 
 var MaxBatch = 0
 
@@ -132,7 +133,7 @@ func (c *Client) SendExitMessage() {
 	log.Infof("action: send_exit_message | result: in_progress | client_id: %v",
 		c.config.ID,
 	)
-	err := sendMessage(c.conn, ExitMessage)
+	err := sendMessage(c.conn, ExitMessage+c.config.ID)
 	if err != nil {
 		log.Errorf("action: send_exit_message | result: fail | client_id: %v | error: %v",
 			c.config.ID,
@@ -145,8 +146,13 @@ func (c *Client) SendExitMessage() {
 	)
 }
 
-// StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClient() {
+	c.SendAgencyBets()
+	c.CheckWinners()
+}
+
+// StartClient Send messages to the client until some time threshold is met
+func (c *Client) SendAgencyBets() {
 	err := c.LoadBetsFile()
 	if err != nil {
 		log.Criticalf("action: load_file | result: fail | client_id: %v | error: %v",
@@ -157,6 +163,9 @@ func (c *Client) StartClient() {
 	}
 	c.createClientSocket()
 	defer c.conn.Close()
+	log.Infof("action: send_agency_bets | result: in_progress | client_id: %v",
+		c.config.ID,
+	)
 	for batch := c.processNextBatch(); batch != nil; batch = c.processNextBatch() {
 		if !c.running {
 			log.Infof("action: stop_client | result: success | client_id: %v",
@@ -206,7 +215,60 @@ func (c *Client) StartClient() {
 
 	c.SendExitMessage()
 
-	log.Infof("action: client_finished | result: success | client_id: %v",
+	log.Infof("action: send_agency_bets | result: success | client_id: %v",
 		c.config.ID,
 	)
+}
+
+func (c *Client) CheckWinners() {
+	log.Infof("action: check_winners | result: in_progress | client_id: %v",
+		c.config.ID,
+	)
+	for {
+		c.createClientSocket()
+
+		err := sendMessage(c.conn, CheckWinnersMessage+c.config.ID)
+
+		if err != nil {
+			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
+				c.config.ID,
+				err,
+			)
+			return
+		}
+
+		msg, err := receiveMessage(c.conn)
+		if err != nil {
+			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
+				c.config.ID,
+				err,
+			)
+			return
+		}
+
+		if isErrorMessage(msg) {
+			select {
+			case <-time.After(5 * c.config.LoopPeriod):
+			case <-c.abort:
+				log.Infof("action: stop_client | result: success | client_id: %v",
+					c.config.ID,
+				)
+				return
+			}
+			continue
+		}
+
+		DNIs, err := ParseArrayFromJSON([]byte(msg))
+
+		if err != nil {
+			log.Errorf("action: consulta_ganadores | result: fail | client_id: %v | error: %v",
+				c.config.ID,
+				err,
+			)
+			return
+		}
+
+		log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v", len(DNIs))
+		break
+	}
 }

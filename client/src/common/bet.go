@@ -1,6 +1,7 @@
 package common
 
 import (
+	"encoding/json"
 	"strings"
 )
 
@@ -17,4 +18,13 @@ type Bet struct {
 
 func wasBetSuccessful(response string) bool {
 	return strings.EqualFold(response, SucessfulBetResponse)
+}
+
+func ParseArrayFromJSON(bytes []byte) ([]string, error) {
+	result := []string{}
+	err := json.Unmarshal(bytes, &result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }

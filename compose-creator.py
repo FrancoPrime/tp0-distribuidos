@@ -42,6 +42,9 @@ def main():
         client = generate_client(i)
         base_content['services'].update(client)
 
+    ## add number of clients to server env
+    base_content['services']['server']['environment'].append(f'AGENCIES={args.x}')
+
     with open(output_file, 'w') as file:
         yaml.safe_dump(base_content, file, default_flow_style=False)
 

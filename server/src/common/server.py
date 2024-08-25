@@ -1,12 +1,14 @@
 import socket
 import logging
 import json
+import os
 from .communication import receive_message, send_message
-from .utils import Bet, store_bets
+from .utils import Bet, store_bets, load_bets, has_won
 
 SuccessMessage = "success"
 ExitMessage = "exit"
 ErrorMessage = "error"
+WinnersMessage = "winners"
 
 class Server:
     def __init__(self, port, listen_backlog):
@@ -15,6 +17,10 @@ class Server:
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
         self.running = True
+        self.agencies = {}
+        for i in range(1, int(os.getenv('AGENCIES', 0)) + 1):
+            self.agencies[f"{i}"] = False
+        self.winners = []
 
     def run(self):
         """
@@ -24,13 +30,18 @@ class Server:
         communication with a client. After client with communucation
         finishes, servers starts to accept new connections again
         """
-
         while self.running:
             client_sock = self.__accept_new_connection()
             if not self.running:
                 logging.info('action: stop_server | result: success')
                 break
             self.__handle_client_connection(client_sock)
+
+    def __check_winners(self):
+        if all(value == True for value in self.agencies.values()):
+            logging.info('action: sorteo | result: success')
+            bets = list(load_bets())
+            self.winners = [bet for bet in bets if has_won(bet)]
 
     def __handle_client_connection(self, client_sock):
         """
@@ -43,8 +54,15 @@ class Server:
             while True:
                 msg = receive_message(client_sock)
 
-                if msg == ExitMessage:
+                if msg.startswith(ExitMessage):
+                    logging.info('Agency finished')
+                    self.agencies[msg[len(ExitMessage):]] = True
+                    self.__check_winners()
                     break
+                
+                if msg.startswith(WinnersMessage):
+                    self.__process_winners_message(client_sock, msg[len(WinnersMessage):])
+                    return
                 
                 bets = Bet.fromJSON(json.loads(msg))
                 store_bets(bets)
@@ -59,6 +77,14 @@ class Server:
             send_message(client_sock, ErrorMessage)
         finally:
             client_sock.close()
+
+    def __process_winners_message(self, client_sock, agencyID):
+        if not all(value == True for value in self.agencies.values()):
+            logging.info('action: winners_request | result: fail | error: agencies not finished')
+            send_message(client_sock, ErrorMessage)
+            return
+        agency_winners = [bet for bet in self.winners if bet.agency == int(agencyID)]
+        send_message(client_sock, json.dumps([bet.document for bet in agency_winners]))
 
     def __accept_new_connection(self):
         """
