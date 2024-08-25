@@ -4,6 +4,7 @@ import json
 import os
 from .communication import receive_message, send_message
 from .utils import Bet, store_bets, load_bets, has_won
+from threading import Thread, Lock
 
 SuccessMessage = "success"
 ExitMessage = "exit"
@@ -16,6 +17,7 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
+        self.bets_lock = Lock()
         self.running = True
         self.agencies = {}
         for i in range(1, int(os.getenv('AGENCIES', 0)) + 1):
@@ -30,18 +32,24 @@ class Server:
         communication with a client. After client with communucation
         finishes, servers starts to accept new connections again
         """
+        threads = []
         while self.running:
             client_sock = self.__accept_new_connection()
             if not self.running:
                 logging.info('action: stop_server | result: success')
                 break
-            self.__handle_client_connection(client_sock)
+            t = Thread(target = self.__handle_client_connection, args = (client_sock,))
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
 
     def __check_winners(self):
         if all(value == True for value in self.agencies.values()):
             logging.info('action: sorteo | result: success')
-            bets = list(load_bets())
-            self.winners = [bet for bet in bets if has_won(bet)]
+            with self.bets_lock:
+                bets = list(load_bets())
+                self.winners = [bet for bet in bets if has_won(bet)]
 
     def __handle_client_connection(self, client_sock):
         """
@@ -65,7 +73,8 @@ class Server:
                     return
                 try:
                     bets = Bet.fromJSON(json.loads(msg))
-                    store_bets(bets)
+                    with self.bets_lock:
+                        store_bets(bets)
                 except Exception as e:
                     logging.error(f'action: apuesta_recibida | result: fail | cantidad: {len(bets)}')
                     send_message(client_sock, ErrorMessage)
