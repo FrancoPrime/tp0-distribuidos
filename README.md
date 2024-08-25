@@ -237,3 +237,8 @@ sudo make docker-compose-logs
 ```
 
 Y observar los logs que informan sobre las apuestas
+
+
+## Protocolo de comunicación implementado
+
+Esta sección será desarrollada en la branch ej7
