@@ -247,3 +247,12 @@ Primero es necesario descomprimir los datasets, para eso ubicarse sobre la carpe
 Luego, generar 5 clientes con:
 
 `./generar-compose.sh docker-compose-dev.yaml 5`
+
+Por ultimo correr
+
+```
+sudo make docker-compose-up
+sudo make docker-compose-logs
+```
+
+Y observar como se procesan las apuestas
