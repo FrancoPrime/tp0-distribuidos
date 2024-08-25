@@ -51,7 +51,7 @@ class Server:
         client socket will also be closed
         """
         try:
-            while True:
+            while self.running:
                 msg = receive_message(client_sock)
 
                 if msg.startswith(ExitMessage):
