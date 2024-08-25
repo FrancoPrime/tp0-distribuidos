@@ -63,10 +63,13 @@ class Server:
                 if msg.startswith(WinnersMessage):
                     self.__process_winners_message(client_sock, msg[len(WinnersMessage):])
                     return
-                
-                bets = Bet.fromJSON(json.loads(msg))
-                store_bets(bets)
-
+                try:
+                    bets = Bet.fromJSON(json.loads(msg))
+                    store_bets(bets)
+                except Exception as e:
+                    logging.error(f'action: apuesta_recibida | result: fail | cantidad: {len(bets)}')
+                    send_message(client_sock, ErrorMessage)
+                    continue
                 logging.info(f'action: apuesta_recibida | result: success | cantidad: {len(bets)}')
 
                 send_message(client_sock, SuccessMessage)
