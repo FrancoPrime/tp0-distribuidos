@@ -24,9 +24,14 @@ class Bet:
         self.birthdate = datetime.date.fromisoformat(birthdate)
         self.number = int(number)
 
-    def fromJSON(json: dict) -> 'Bet':
-        return Bet(json['id'], json['nombre'], json['apellido'],
-                   json['documento'], json['nacimiento'], json['numero'])
+    def fromStr(msg: str) -> 'Bet':
+        """
+        Parses a string to a Bet object.
+        """
+        fields = msg.split(';')
+        if len(fields) != 7:
+            raise ValueError("Invalid message format")
+        return Bet(fields[0], fields[1], fields[2], fields[3], fields[4], fields[5])
 
 """ Checks whether a bet won the prize or not. """
 def has_won(bet: Bet) -> bool:

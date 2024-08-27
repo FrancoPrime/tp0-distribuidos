@@ -52,6 +52,7 @@ func (c *Client) createClientSocket() error {
 	return nil
 }
 
+// StopClient Puts the client as non running. Aborts current loop if exists.
 func (c *Client) StopClient() {
 	log.Infof("action: stop_client | result: in_progress | client_id: %v",
 		c.config.ID,
@@ -60,28 +61,8 @@ func (c *Client) StopClient() {
 	close(c.abort)
 }
 
-// StartClientLoop Send messages to the client until some time threshold is met
-func (c *Client) StartClient() {
-	// There is an autoincremental msgID to identify every message sent
-	// Messages if the message amount threshold has not been surpassed
-	if !c.running {
-		log.Infof("action: stop_client | result: success | client_id: %v",
-			c.config.ID,
-		)
-		return
-	}
-	// Create the connection the server in every loop iteration. Send an
-	c.createClientSocket()
-
-	bet := GetBetFromEnv(c.config.ID)
-	err := sendMessage(c.conn, bet)
-	if err != nil {
-		log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
-			c.config.ID,
-			err,
-		)
-		return
-	}
+// CheckBetResult Checks the result of the bet sent
+func (c *Client) CheckBetResult(bet Bet) {
 	msg, err := receiveMessage(c.conn)
 	c.conn.Close()
 
@@ -109,4 +90,26 @@ func (c *Client) StartClient() {
 		c.config.ID,
 		msg,
 	)
+}
+
+// StartClient Starts the client. It sends a bet to the server
+func (c *Client) StartClient() {
+	if !c.running {
+		log.Infof("action: stop_client | result: success | client_id: %v",
+			c.config.ID,
+		)
+		return
+	}
+	c.createClientSocket()
+
+	bet := GetBetFromEnv(c.config.ID)
+	err := sendBet(c.conn, bet)
+	if err != nil {
+		log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
+			c.config.ID,
+			err,
+		)
+		return
+	}
+	c.CheckBetResult(bet)
 }

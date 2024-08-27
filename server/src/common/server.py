@@ -42,7 +42,7 @@ class Server:
             addr = client_sock.getpeername()
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
             
-            bet = Bet.fromJSON(json.loads(msg))
+            bet = Bet.fromStr(msg)
             store_bets([bet])
 
             logging.info(f'action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}')

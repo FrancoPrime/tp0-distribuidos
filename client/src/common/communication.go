@@ -2,24 +2,23 @@ package common
 
 import (
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"net"
 )
 
-func sendMessage(conn net.Conn, bet Bet) error {
-	betJSONBytes, err := json.Marshal(bet)
-	if err != nil {
-		return fmt.Errorf("failed to jsonify bet: %w", err)
-	}
+func sendBet(conn net.Conn, bet Bet) error {
+	betMessage := fmt.Sprintf("%s;%s;%s;%s;%s;%s;", bet.AgencyID, bet.Nombre, bet.Apellido, bet.Documento, bet.Nacimiento, bet.Numero)
+	return sendMessage(conn, betMessage)
+}
 
+func sendMessage(conn net.Conn, message string) error {
 	lengthBytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(lengthBytes, uint16(len(betJSONBytes)))
-	betJSONBytes = append(lengthBytes, betJSONBytes...)
+	binary.BigEndian.PutUint16(lengthBytes, uint16(len(message)))
+	messageBytes := append(lengthBytes, message...)
 
-	remaining := len(betJSONBytes)
+	remaining := len(messageBytes)
 	for remaining > 0 {
-		bytesWritten, err := conn.Write(betJSONBytes[len(betJSONBytes)-remaining:])
+		bytesWritten, err := conn.Write(messageBytes[len(messageBytes)-remaining:])
 		if err != nil {
 			return fmt.Errorf("failed to write to connection: %w", err)
 		}
@@ -29,6 +28,7 @@ func sendMessage(conn net.Conn, bet Bet) error {
 
 	return nil
 }
+
 func receiveMessage(conn net.Conn) (string, error) {
 	// Read the 2-byte length field
 	lengthBytes := make([]byte, 2)

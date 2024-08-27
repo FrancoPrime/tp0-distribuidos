@@ -241,4 +241,18 @@ Y observar los logs que informan sobre las apuestas
 
 ## Protocolo de comunicación implementado
 
-Esta sección será desarrollada en la branch ej7
+Para este ejercicio, la primer versión del protocolo implementado está constituido de la siguiente manera:
+
+El mensaje contiene 2 bytes en donde irá la longitud completa del mensaje. Seguido a esto se encontrará un string.
+
+Hay 2 tipos de mensajes, especiales que comienzan con un prefijo, y los que no
+
+Mensajes especiales:
+
+**"success"**: Indica que la operación ha sido exitosa
+
+Los mensajes no especiales contienen un bet del siguiente modo:
+
+Agencia;Nombre;Apellido;Documento;Nacimiento;Numero;
+
+Con un ; al final.
