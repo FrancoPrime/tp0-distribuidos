@@ -1,6 +1,5 @@
 import socket
 import logging
-import json
 from .communication import receive_message, send_message
 from .utils import Bet, store_bets
 
@@ -18,8 +17,6 @@ class Server:
 
     def run(self):
         """
-        Dummy Server loop
-
         Server that accept a new connections and establishes a
         communication with a client. After client with communucation
         finishes, servers starts to accept new connections again
@@ -34,19 +31,20 @@ class Server:
 
     def __handle_client_connection(self, client_sock):
         """
-        Read message from a specific client socket and closes the socket
+        Read message from a specific client socket and loops through their messages until receiving an exit message
 
         If a problem arises in the communication with the client, the
-        client socket will also be closed
+        client socket will also be closed.
         """
         try:
-            while True:
+            while self.running:
                 msg = receive_message(client_sock)
 
                 if msg == ExitMessage:
+                    logging.info('Agency finished')
                     break
                 
-                bets = Bet.fromJSON(json.loads(msg))
+                bets = Bet.fromStr(msg)
                 store_bets(bets)
 
                 logging.info(f'action: apuesta_recibida | result: success | cantidad: {len(bets)}')
