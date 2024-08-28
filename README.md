@@ -250,6 +250,7 @@ Hay 2 tipos de mensajes, especiales que comienzan con un prefijo, y los que no
 Mensajes especiales:
 
 **"success"**: Indica que la operación ha sido exitosa
+**"error"**: Indica que ocurrió un error en la operación
 
 Los mensajes no especiales contienen un bet del siguiente modo:
 
