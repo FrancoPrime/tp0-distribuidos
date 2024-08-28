@@ -2,27 +2,22 @@ package common
 
 import (
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"net"
+	"strings"
 )
 
-func sendBets(conn net.Conn, batch []Bet) error {
-	betBatchJSONBytes, err := json.Marshal(batch)
-	if err != nil {
-		return fmt.Errorf("failed to jsonify bet: %w", err)
-	}
-	return sendMessage(conn, string(betBatchJSONBytes))
-}
+var MaxPayloadSize = 8*1024 - 2
 
-func sendMessage(conn net.Conn, content string) error {
+// SendMessage Sends a message to the server with the communication protocol defined
+func sendMessage(conn net.Conn, message string) error {
 	lengthBytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(lengthBytes, uint16(len(content)))
-	bytes := append(lengthBytes, content...)
+	binary.BigEndian.PutUint16(lengthBytes, uint16(len(message)))
+	messageBytes := append(lengthBytes, message...)
 
-	remaining := len(bytes)
+	remaining := len(messageBytes)
 	for remaining > 0 {
-		bytesWritten, err := conn.Write(bytes[len(bytes)-remaining:])
+		bytesWritten, err := conn.Write(messageBytes[len(messageBytes)-remaining:])
 		if err != nil {
 			return fmt.Errorf("failed to write to connection: %w", err)
 		}
@@ -33,6 +28,7 @@ func sendMessage(conn net.Conn, content string) error {
 	return nil
 }
 
+// ReceiveMessage Receives a message from the server with the communication protocol defined
 func receiveMessage(conn net.Conn) (string, error) {
 	// Read the 2-byte length field
 	lengthBytes := make([]byte, 2)
@@ -60,4 +56,9 @@ func receiveMessage(conn net.Conn) (string, error) {
 	}
 
 	return string(messageBytes), nil
+}
+
+func ParseStringArray(str string) []string {
+	splitted := strings.Split(str, ";")
+	return splitted[:len(splitted)-1]
 }

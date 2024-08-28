@@ -1,10 +1,9 @@
 import socket
 import logging
-import json
 import os
 from .communication import receive_message, send_message
-from .utils import Bet, store_bets, load_bets, has_won
 from threading import Thread, Lock
+from .utils import Bet, store_bets, load_bets, has_won, serialize_winners
 
 SuccessMessage = "success"
 ExitMessage = "exit"
@@ -26,8 +25,6 @@ class Server:
 
     def run(self):
         """
-        Dummy Server loop
-
         Server that accept a new connections and establishes a
         communication with a client. After client with communucation
         finishes, servers starts to accept new connections again
@@ -52,17 +49,17 @@ class Server:
 
     def __handle_client_connection(self, client_sock):
         """
-        Read message from a specific client socket and closes the socket
+        Read message from a specific client socket and loops through their messages until receiving an exit message
 
         If a problem arises in the communication with the client, the
-        client socket will also be closed
+        client socket will also be closed.
         """
         try:
             while self.running:
                 msg = receive_message(client_sock)
 
                 if msg.startswith(ExitMessage):
-                    logging.info('Agency finished')
+                    logging.debug('Agency finished')
                     with self.bets_lock:
                         self.agencies[msg[len(ExitMessage):]] = True
                         self.__check_winners()
@@ -72,19 +69,15 @@ class Server:
                     with self.bets_lock:
                         self.__process_winners_message(client_sock, msg[len(WinnersMessage):])
                     return
-                try:
-                    bets = Bet.fromJSON(json.loads(msg))
-                    with self.bets_lock:
-                        store_bets(bets)
-                except Exception as e:
-                    logging.error(f'action: apuesta_recibida | result: fail | cantidad: {len(bets)}')
-                    send_message(client_sock, ErrorMessage)
-                    continue
+                
+                bets = Bet.fromStr(msg)
+                with self.bets_lock:
+                    store_bets(bets)
                 logging.info(f'action: apuesta_recibida | result: success | cantidad: {len(bets)}')
 
                 send_message(client_sock, SuccessMessage)
         except ConnectionResetError:
-            logging.info('Client disconnected')
+            logging.debug('Client disconnected')
         except Exception as e:
             logging.info(f'action: apuesta_recibida | result: fail | cantidad: 0')
             send_message(client_sock, ErrorMessage)
@@ -97,7 +90,7 @@ class Server:
             send_message(client_sock, ErrorMessage)
             return
         agency_winners = [bet for bet in self.winners if bet.agency == int(agencyID)]
-        send_message(client_sock, json.dumps([bet.document for bet in agency_winners]))
+        send_message(client_sock, serialize_winners(agency_winners))
 
     def __accept_new_connection(self):
         """

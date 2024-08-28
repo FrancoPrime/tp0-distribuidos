@@ -287,9 +287,17 @@ Hay mensajes especiales:
 
 En caso de que un mensaje no sea ninguno de los casos de arriba, se interpretará como un string libre:
 
-- El string libre que envia el cliente al servidor se trata de un array de apuestas en formato json.
-- El string libre que envia el servidor al cliente se trata de un array de documentos(strings) en formato json.
+- El string libre que envia el cliente al servidor se trata de un array de apuestas en este formato:
+
+Agencia;Nombre;Apellido;Documento;Nacimiento;Numero;
+
+- El string libre que envia el servidor al cliente se trata de un array de documentos(strings) en este formato:
+
+Documento;Documento;Documento;
+
+Ambos con un ; al final.
 
 ## Mecanismos de sincronización utilizados
 
 Para realizar la concurrencia de múltiples clientes, se genera un thread para cada conexión nueva, de modo que la escucha de nuevas conexiones no se ve bloqueada. A la hora de sincronizar estos threads, se utiliza memoria mutable compartida, protegida tras un lock. Cuando un thread necesita acceder a un recurso compartido (que en este caso sería el diccionario de agencias que terminaron, y el archivo de apuestas), realiza un lock sobre el mutex `bets_lock` lo que le permite utilizar los recursos sin que ningún otro thread acceda a ellos al mismo tiempo.
+
