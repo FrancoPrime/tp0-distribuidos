@@ -74,6 +74,11 @@ func (c *Client) CheckBetResult(bet Bet) {
 		return
 	}
 
+	log.Debugf("action: receive_message | result: success | client_id: %v | msg: %v",
+		c.config.ID,
+		msg,
+	)
+
 	if wasBetSuccessful(msg) {
 		log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v",
 			bet.Documento,
@@ -85,11 +90,6 @@ func (c *Client) CheckBetResult(bet Bet) {
 			bet.Numero,
 		)
 	}
-
-	log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
-		c.config.ID,
-		msg,
-	)
 }
 
 // StartClient Starts the client. It sends a bet to the server
@@ -103,7 +103,7 @@ func (c *Client) StartClient() {
 	c.createClientSocket()
 
 	bet := GetBetFromEnv(c.config.ID)
-	err := sendBet(c.conn, bet)
+	err := sendMessage(c.conn, bet.Serialize())
 	if err != nil {
 		log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
 			c.config.ID,

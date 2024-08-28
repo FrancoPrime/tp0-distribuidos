@@ -6,11 +6,7 @@ import (
 	"net"
 )
 
-func sendBet(conn net.Conn, bet Bet) error {
-	betMessage := fmt.Sprintf("%s;%s;%s;%s;%s;%s;", bet.AgencyID, bet.Nombre, bet.Apellido, bet.Documento, bet.Nacimiento, bet.Numero)
-	return sendMessage(conn, betMessage)
-}
-
+// SendMessage Sends a message to the server with the communication protocol defined
 func sendMessage(conn net.Conn, message string) error {
 	lengthBytes := make([]byte, 2)
 	binary.BigEndian.PutUint16(lengthBytes, uint16(len(message)))
@@ -29,6 +25,7 @@ func sendMessage(conn net.Conn, message string) error {
 	return nil
 }
 
+// ReceiveMessage Receives a message from the server with the communication protocol defined
 func receiveMessage(conn net.Conn) (string, error) {
 	// Read the 2-byte length field
 	lengthBytes := make([]byte, 2)
