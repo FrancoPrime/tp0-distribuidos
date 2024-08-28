@@ -2,6 +2,7 @@ package common
 
 import (
 	"encoding/csv"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -18,6 +19,12 @@ type Bet struct {
 	Numero     string `json:"numero"`
 }
 
+// Serialize Serializes the bet to a string
+func (b Bet) Serialize() string {
+	return fmt.Sprintf("%s;%s;%s;%s;%s;%s;", b.AgencyID, b.Nombre, b.Apellido, b.Documento, b.Nacimiento, b.Numero)
+}
+
+// wasBetSuccessful Checks if the response from the server was a successful message
 func wasBetSuccessful(response string) bool {
 	return strings.EqualFold(response, SucessfulBetResponse)
 }

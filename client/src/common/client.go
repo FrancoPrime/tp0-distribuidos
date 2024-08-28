@@ -11,8 +11,6 @@ import (
 const ExitMessage = "exit"
 const ErrorMessage = "error"
 
-var MaxBatch = 0
-
 var log = logging.MustGetLogger("log")
 
 // ClientConfig Configuration used by the client
@@ -78,18 +76,24 @@ func (c *Client) StopClient() {
 }
 
 // ProcessNextBatch Returns the next batch of bets to be sent to the server
-func (c *Client) processNextBatch() []Bet {
+func (c *Client) processNextBatch() (string, int) {
 	if c.currentBet >= len(c.bets) {
-		return nil
+		return "", 0
 	}
 	start := c.currentBet
 	end := c.currentBet + c.config.BatchSize
-	if end > len(c.bets) {
-		end = len(c.bets)
+	size := 0
+	batch := ""
+	for i := start; i < end && i < len(c.bets); i++ {
+		bet := c.bets[i].Serialize()
+		if len(batch)+len(bet) > MaxPayloadSize {
+			break
+		}
+		batch += bet
+		size++
 	}
-	batch := c.bets[start:end]
-	c.currentBet = end
-	return batch
+	c.currentBet += size
+	return batch, size
 }
 
 // LoadBetsFile Loads the bets file from the filesystem
@@ -172,7 +176,7 @@ func (c *Client) StartClient() {
 	}
 	c.createClientSocket()
 	defer c.conn.Close()
-	for batch := c.processNextBatch(); batch != nil; batch = c.processNextBatch() {
+	for batch, size := c.processNextBatch(); size > 0; batch, size = c.processNextBatch() {
 		if !c.running {
 			log.Infof("action: stop_client | result: success | client_id: %v",
 				c.config.ID,
@@ -180,7 +184,7 @@ func (c *Client) StartClient() {
 			return
 		}
 
-		err := sendBets(c.conn, batch)
+		err := sendMessage(c.conn, batch)
 		if err != nil {
 			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
 				c.config.ID,
@@ -189,7 +193,7 @@ func (c *Client) StartClient() {
 			return
 		}
 
-		shouldContinue := c.CheckMessageResult(len(batch))
+		shouldContinue := c.CheckMessageResult(size)
 		if !shouldContinue {
 			return
 		}
