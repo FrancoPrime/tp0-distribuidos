@@ -98,7 +98,7 @@ func (c *Client) processNextBatch() (string, int) {
 
 // LoadBetsFile Loads the bets file from the filesystem
 func (c *Client) LoadBetsFile() error {
-	log.Infof("action: load_file | result: in_progress | client_id: %v",
+	log.Debugf("action: load_file | result: in_progress | client_id: %v",
 		c.config.ID,
 	)
 	bets, err := getBetsFromFile(c.config.ID)
@@ -110,7 +110,7 @@ func (c *Client) LoadBetsFile() error {
 		return err
 	}
 	c.bets = bets
-	log.Infof("action: load_file | result: success | client_id: %v",
+	log.Debugf("action: load_file | result: success | client_id: %v",
 		c.config.ID,
 	)
 	return nil
@@ -118,7 +118,7 @@ func (c *Client) LoadBetsFile() error {
 
 // SendExitMessage Informs the server all bets were placed
 func (c *Client) SendExitMessage() {
-	log.Infof("action: send_exit_message | result: in_progress | client_id: %v",
+	log.Debugf("action: send_exit_message | result: in_progress | client_id: %v",
 		c.config.ID,
 	)
 	err := sendMessage(c.conn, ExitMessage)
@@ -129,7 +129,7 @@ func (c *Client) SendExitMessage() {
 		)
 		return
 	}
-	log.Infof("action: send_exit_message | result: success | client_id: %v",
+	log.Debugf("action: send_exit_message | result: success | client_id: %v",
 		c.config.ID,
 	)
 }
@@ -161,7 +161,7 @@ func (c *Client) CheckMessageResult(batchSize int) bool {
 			batchSize,
 		)
 	} else {
-		log.Infof("action: apuesta_enviada | result: fail | cantidad: %v",
+		log.Errorf("action: apuesta_enviada | result: fail | cantidad: %v",
 			batchSize,
 		)
 	}
