@@ -23,15 +23,15 @@ class Bet:
         self.birthdate = datetime.date.fromisoformat(birthdate)
         self.number = int(number)
         
-    def fromStr(msg: str) -> 'Bet':
+    def fromStr(msg: str) -> list['Bet']:
         """
         Parses a string to an array of Bet objects.
         """
-        fields = msg.split(';')
-        if len(fields) % 7 != 0:
+        if msg.count(';') % 6 != 0:
             raise ValueError("Invalid message format")
+        fields = msg.split(';')
         bets = []
-        for i in range(0, len(fields), 7):
+        for i in range(0, len(fields) - 1, 6):
             bets.append(Bet(fields[i], fields[i+1], fields[i+2],
                             fields[i+3], fields[i+4], fields[i+5]))
         return bets

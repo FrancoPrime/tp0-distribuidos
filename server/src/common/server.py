@@ -41,9 +41,9 @@ class Server:
                 msg = receive_message(client_sock)
 
                 if msg == ExitMessage:
-                    logging.info('Agency finished')
+                    logging.debug('Agency finished')
                     break
-                
+                logging.debug(f'Received message: {msg}')
                 bets = Bet.fromStr(msg)
                 store_bets(bets)
 
@@ -51,7 +51,7 @@ class Server:
 
                 send_message(client_sock, SuccessMessage)
         except ConnectionResetError:
-            logging.info('Client disconnected')
+            logging.debug('Client disconnected')
         except Exception as e:
             logging.info(f'action: apuesta_recibida | result: fail | cantidad: 0')
             send_message(client_sock, ErrorMessage)
