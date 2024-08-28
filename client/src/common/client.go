@@ -1,10 +1,7 @@
 package common
 
 import (
-	"encoding/csv"
-	"io"
 	"net"
-	"os"
 	"strings"
 	"time"
 
@@ -14,8 +11,6 @@ import (
 const ExitMessage = "exit"
 const ErrorMessage = "error"
 const CheckWinnersMessage = "winners"
-
-var MaxBatch = 0
 
 var log = logging.MustGetLogger("log")
 
@@ -51,6 +46,7 @@ func NewClient(config ClientConfig) *Client {
 	return client
 }
 
+// isErrorMessage Checks if the message received from the server is an error message
 func isErrorMessage(msg string) bool {
 	return strings.EqualFold(msg, ErrorMessage)
 }
@@ -71,6 +67,7 @@ func (c *Client) createClientSocket() error {
 	return nil
 }
 
+// StopClient Puts the client as non running. Aborts current loop if exists.
 func (c *Client) StopClient() {
 	log.Infof("action: stop_client | result: in_progress | client_id: %v",
 		c.config.ID,
@@ -79,58 +76,50 @@ func (c *Client) StopClient() {
 	close(c.abort)
 }
 
-func (c *Client) processNextBatch() []Bet {
+// ProcessNextBatch Returns the next batch of bets to be sent to the server
+func (c *Client) processNextBatch() (string, int) {
 	if c.currentBet >= len(c.bets) {
-		return nil
+		return "", 0
 	}
 	start := c.currentBet
 	end := c.currentBet + c.config.BatchSize
-	if end > len(c.bets) {
-		end = len(c.bets)
-	}
-	batch := c.bets[start:end]
-	c.currentBet = end
-	return batch
-}
-
-func (c *Client) LoadBetsFile() error {
-	log.Infof("action: load_file | result: in_progress | client_id: %v",
-		c.config.ID,
-	)
-	file, err := os.Open("./agency.csv")
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	reader := csv.NewReader(file)
-	for {
-		record, err := reader.Read()
-		if err == io.EOF {
+	size := 0
+	batch := ""
+	for i := start; i < end && i < len(c.bets); i++ {
+		bet := c.bets[i].Serialize()
+		if len(batch)+len(bet) > MaxPayloadSize {
 			break
 		}
-		if err != nil {
-			return err
-		}
-
-		bet := Bet{
-			AgencyID:   c.config.ID,
-			Nombre:     record[0],
-			Apellido:   record[1],
-			Documento:  record[2],
-			Nacimiento: record[3],
-			Numero:     record[4],
-		}
-		c.bets = append(c.bets, bet)
+		batch += bet
+		size++
 	}
-	log.Infof("action: load_file | result: success | client_id: %v",
+	c.currentBet += size
+	return batch, size
+}
+
+// LoadBetsFile Loads the bets file from the filesystem
+func (c *Client) LoadBetsFile() error {
+	log.Debugf("action: load_file | result: in_progress | client_id: %v",
+		c.config.ID,
+	)
+	bets, err := getBetsFromFile(c.config.ID)
+	if err != nil {
+		log.Errorf("action: load_file | result: fail | client_id: %v | error: %v",
+			c.config.ID,
+			err,
+		)
+		return err
+	}
+	c.bets = bets
+	log.Debugf("action: load_file | result: success | client_id: %v",
 		c.config.ID,
 	)
 	return nil
 }
 
+// SendExitMessage Informs the server all bets were placed
 func (c *Client) SendExitMessage() {
-	log.Infof("action: send_exit_message | result: in_progress | client_id: %v",
+	log.Debugf("action: send_exit_message | result: in_progress | client_id: %v",
 		c.config.ID,
 	)
 	err := sendMessage(c.conn, ExitMessage+c.config.ID)
@@ -141,7 +130,7 @@ func (c *Client) SendExitMessage() {
 		)
 		return
 	}
-	log.Infof("action: send_exit_message | result: success | client_id: %v",
+	log.Debugf("action: send_exit_message | result: success | client_id: %v",
 		c.config.ID,
 	)
 }
@@ -151,22 +140,52 @@ func (c *Client) StartClient() {
 	c.CheckWinners()
 }
 
-// StartClient Send messages to the client until some time threshold is met
-func (c *Client) SendAgencyBets() {
-	err := c.LoadBetsFile()
+// CheckMessageResult Checks if the message received from the server is an error message
+func (c *Client) CheckMessageResult(batchSize int) bool {
+	msg, err := receiveMessage(c.conn)
+
 	if err != nil {
-		log.Criticalf("action: load_file | result: fail | client_id: %v | error: %v",
+		log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
 			c.config.ID,
 			err,
 		)
+		return false
+	}
+
+	log.Debugf("action: receive_message | result: success | client_id: %v | msg: %v",
+		c.config.ID,
+		msg,
+	)
+
+	if isErrorMessage(msg) {
+		log.Errorf("action: apuesta_enviada | result: fail | client_id: %v | error: Server Abort",
+			c.config.ID,
+		)
+		return false
+	} else if wasBetSuccessful(msg) {
+		log.Infof("action: apuesta_enviada | result: success | cantidad: %v",
+			batchSize,
+		)
+	} else {
+		log.Errorf("action: apuesta_enviada | result: fail | cantidad: %v",
+			batchSize,
+		)
+	}
+	return true
+}
+
+// SendAgencyBets Starts the client. It loads the bets file and sends them in batch to the server
+func (c *Client) SendAgencyBets() {
+	err := c.LoadBetsFile()
+	if err != nil {
 		return
 	}
 	c.createClientSocket()
 	defer c.conn.Close()
-	log.Infof("action: send_agency_bets | result: in_progress | client_id: %v",
+	log.Debugf("action: send_agency_bets | result: in_progress | client_id: %v",
 		c.config.ID,
 	)
-	for batch := c.processNextBatch(); batch != nil; batch = c.processNextBatch() {
+	for batch, size := c.processNextBatch(); size > 0; batch, size = c.processNextBatch() {
 		if !c.running {
 			log.Infof("action: stop_client | result: success | client_id: %v",
 				c.config.ID,
@@ -174,7 +193,7 @@ func (c *Client) SendAgencyBets() {
 			return
 		}
 
-		err := sendBets(c.conn, batch)
+		err := sendMessage(c.conn, batch)
 		if err != nil {
 			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
 				c.config.ID,
@@ -182,40 +201,16 @@ func (c *Client) SendAgencyBets() {
 			)
 			return
 		}
-		msg, err := receiveMessage(c.conn)
 
-		if err != nil {
-			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
-				c.config.ID,
-				err,
-			)
+		shouldContinue := c.CheckMessageResult(size)
+		if !shouldContinue {
 			return
-		}
-
-		log.Debugf("action: receive_message | result: success | client_id: %v | msg: %v",
-			c.config.ID,
-			msg,
-		)
-
-		if isErrorMessage(msg) {
-			log.Errorf("action: apuesta_enviada | result: fail | client_id: %v | error: Server Abort",
-				c.config.ID,
-			)
-			return
-		} else if wasBetSuccessful(msg) {
-			log.Infof("action: apuesta_enviada | result: success | cantidad: %v",
-				len(batch),
-			)
-		} else {
-			log.Infof("action: apuesta_enviada | result: fail | cantidad: %v",
-				len(batch),
-			)
 		}
 	}
 
 	c.SendExitMessage()
 
-	log.Infof("action: send_agency_bets | result: success | client_id: %v",
+	log.Debugf("action: send_agency_bets | result: success | client_id: %v",
 		c.config.ID,
 	)
 }
@@ -258,16 +253,7 @@ func (c *Client) CheckWinners() {
 			continue
 		}
 
-		DNIs, err := ParseArrayFromJSON([]byte(msg))
-
-		if err != nil {
-			log.Errorf("action: consulta_ganadores | result: fail | client_id: %v | error: %v",
-				c.config.ID,
-				err,
-			)
-			return
-		}
-
+		DNIs := ParseStringArray(msg)
 		log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v", len(DNIs))
 		break
 	}

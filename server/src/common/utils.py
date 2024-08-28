@@ -22,12 +22,27 @@ class Bet:
         self.document = document
         self.birthdate = datetime.date.fromisoformat(birthdate)
         self.number = int(number)
-
-    def fromJSON(json_list: list) -> list['Bet']:
-        return [Bet(item['id'], item['nombre'], item['apellido'],
-                    item['documento'], item['nacimiento'], item['numero'])
-                for item in json_list]
         
+    def fromStr(msg: str) -> list['Bet']:
+        """
+        Parses a string to an array of Bet objects.
+        """
+        if msg.count(';') % 6 != 0:
+            raise ValueError("Invalid message format")
+        fields = msg.split(';')
+        bets = []
+        for i in range(0, len(fields) - 1, 6):
+            bets.append(Bet(fields[i], fields[i+1], fields[i+2],
+                            fields[i+3], fields[i+4], fields[i+5]))
+        return bets
+
+""" Serializes the winners into a string """
+def serialize_winners(winners: list['Bet']) -> str:
+    output = ""
+    for winner in winners:
+        output += f"{winner.document};"
+    return output
+
 """ Checks whether a bet won the prize or not. """
 def has_won(bet: Bet) -> bool:
     return bet.number == LOTTERY_WINNER_NUMBER

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"reflect"
 	"strings"
 	"syscall"
 	"time"
@@ -120,12 +119,6 @@ func main() {
 		LoopAmount:    v.GetInt("loop.amount"),
 		LoopPeriod:    v.GetDuration("loop.period"),
 		BatchSize:     v.GetInt("batch.maxAmount"),
-	}
-
-	common.MaxBatch = (8 * 1024) / int(reflect.TypeOf(common.Bet{}).Size())
-	if clientConfig.BatchSize > common.MaxBatch {
-		log.Warningf("Batch size is greater than the maximum allowed. Setting batch size to maximum allowed")
-		clientConfig.BatchSize = common.MaxBatch
 	}
 
 	client := common.NewClient(clientConfig)

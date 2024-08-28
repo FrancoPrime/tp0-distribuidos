@@ -279,5 +279,12 @@ Hay mensajes especiales:
 
 En caso de que un mensaje no sea ninguno de los casos de arriba, se interpretará como un string libre:
 
-- El string libre que envia el cliente al servidor se trata de un array de apuestas en formato json.
-- El string libre que envia el servidor al cliente se trata de un array de documentos(strings) en formato json.
+- El string libre que envia el cliente al servidor se trata de un array de apuestas en este formato:
+
+Agencia;Nombre;Apellido;Documento;Nacimiento;Numero;
+
+- El string libre que envia el servidor al cliente se trata de un array de documentos(strings) en este formato:
+
+Documento;Documento;Documento;
+
+Ambos con un ; al final.
