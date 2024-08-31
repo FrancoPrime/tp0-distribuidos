@@ -43,7 +43,6 @@ class Server:
                 if msg == ExitMessage:
                     logging.debug('Agency finished')
                     break
-                logging.debug(f'Received message: {msg}')
                 bets = Bet.fromStr(msg)
                 store_bets(bets)
 
