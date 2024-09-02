@@ -202,8 +202,7 @@ Para correr el script, se deberá invocar sobre el directorio raíz estos comand
 
 ```
 sudo make docker-compose-up
-sudo docker build --tag 'validar-echo-server' .
-sudo docker run --network tp0_testing_net 'validar-echo-server'
+sudo ./validar-echo-server.sh
 ```
 
 ### Ejercicio 4
