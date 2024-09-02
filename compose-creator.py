@@ -22,7 +22,6 @@ def generate_client(index):
             'entrypoint': '/client',
             'environment': [
                 f'CLI_ID={index}',
-                'CLI_LOG_LEVEL=DEBUG',
                 f'NOMBRE={getRandomName()}',
                 f'APELLIDO={getRandomSurname()}',
                 f'DOCUMENTO={random.randint(10000000, 99999999)}',
