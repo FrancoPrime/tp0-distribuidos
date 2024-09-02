@@ -1,7 +1,7 @@
 #!/bin/sh
-source ./config-validador.ini
+. ./config-validador.ini
 
-RESPONSE=$(echo "$TEST_MESSAGE" | nc $SERVER_IP $SERVER_PORT)
+RESPONSE=$(sudo docker run --rm --network "$NETWORK_NAME" busybox sh -c "echo '$TEST_MESSAGE' | nc $SERVER_IP $SERVER_PORT")
 
 if [ "$RESPONSE" = "$TEST_MESSAGE" ]; then
   echo "action: test_echo_server | result: success"

@@ -8,8 +8,7 @@ def generate_client(index):
             'image': 'client:latest',
             'entrypoint': '/client',
             'environment': [
-                f'CLI_ID={index}',
-                'CLI_LOG_LEVEL=DEBUG'
+                f'CLI_ID={index}'
             ],
             'networks': [
                 'testing_net'
