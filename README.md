@@ -298,5 +298,6 @@ Ambos con un ; al final.
 
 ## Mecanismos de sincronización utilizados
 
-Para realizar la concurrencia de múltiples clientes, se genera un thread para cada conexión nueva, de modo que la escucha de nuevas conexiones no se ve bloqueada. A la hora de sincronizar estos threads, se utiliza memoria mutable compartida, protegida tras un lock. Cuando un thread necesita acceder a un recurso compartido (que en este caso sería el diccionario de agencias que terminaron, y el archivo de apuestas), realiza un lock sobre el mutex `bets_lock` lo que le permite utilizar los recursos sin que ningún otro thread acceda a ellos al mismo tiempo.
+Para realizar la concurrencia de múltiples clientes, se genera un proceso con la biblioteca **"multiprocessing"** para cada conexión nueva, de modo que la escucha de nuevas conexiones no se ve bloqueada. A la hora de sincronizar estos procesos, se utiliza memoria mutable compartida, protegida tras un lock provisto por la misma biblioteca. Cuando un proceso necesita acceder a un recurso compartido (que en este caso sería el diccionario de agencias que terminaron, el archivo de apuestas o la lista de ganadores), se realiza un lock sobre `bets_lock` lo que le permite utilizar los recursos sin que ningún otro proceso acceda a ellos al mismo tiempo.
 
+Por motivos de simplicidad para este caso de uso se optó por un unico lock, que permite acceder a todos los recursos.
