@@ -7,4 +7,5 @@ loop:
 log:
   level: "INFO"
 batch:
+  filename: "agency.csv"
   maxAmount: 1000

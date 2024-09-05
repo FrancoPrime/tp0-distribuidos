@@ -25,23 +25,19 @@ type ClientConfig struct {
 
 // Client Entity that encapsulates how
 type Client struct {
-	config     ClientConfig
-	conn       net.Conn
-	running    bool
-	bets       []Bet
-	currentBet int
-	abort      chan struct{}
+	config  ClientConfig
+	conn    net.Conn
+	running bool
+	abort   chan struct{}
 }
 
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
 func NewClient(config ClientConfig) *Client {
 	client := &Client{
-		config:     config,
-		running:    true,
-		bets:       make([]Bet, 0),
-		currentBet: 0,
-		abort:      make(chan struct{}),
+		config:  config,
+		running: true,
+		abort:   make(chan struct{}),
 	}
 	return client
 }
@@ -74,47 +70,7 @@ func (c *Client) StopClient() {
 	)
 	c.running = false
 	close(c.abort)
-}
-
-// ProcessNextBatch Returns the next batch of bets to be sent to the server
-func (c *Client) processNextBatch() (string, int) {
-	if c.currentBet >= len(c.bets) {
-		return "", 0
-	}
-	start := c.currentBet
-	end := c.currentBet + c.config.BatchSize
-	size := 0
-	batch := ""
-	for i := start; i < end && i < len(c.bets); i++ {
-		bet := c.bets[i].Serialize()
-		if len(batch)+len(bet) > MaxPayloadSize {
-			break
-		}
-		batch += bet
-		size++
-	}
-	c.currentBet += size
-	return batch, size
-}
-
-// LoadBetsFile Loads the bets file from the filesystem
-func (c *Client) LoadBetsFile() error {
-	log.Debugf("action: load_file | result: in_progress | client_id: %v",
-		c.config.ID,
-	)
-	bets, err := getBetsFromFile(c.config.ID)
-	if err != nil {
-		log.Errorf("action: load_file | result: fail | client_id: %v | error: %v",
-			c.config.ID,
-			err,
-		)
-		return err
-	}
-	c.bets = bets
-	log.Debugf("action: load_file | result: success | client_id: %v",
-		c.config.ID,
-	)
-	return nil
+	CloseFileReader()
 }
 
 // SendExitMessage Informs the server all bets were placed
@@ -176,16 +132,12 @@ func (c *Client) CheckMessageResult(batchSize int) bool {
 
 // SendAgencyBets Starts the client. It loads the bets file and sends them in batch to the server
 func (c *Client) SendAgencyBets() {
-	err := c.LoadBetsFile()
-	if err != nil {
-		return
-	}
 	c.createClientSocket()
 	defer c.conn.Close()
 	log.Debugf("action: send_agency_bets | result: in_progress | client_id: %v",
 		c.config.ID,
 	)
-	for batch, size := c.processNextBatch(); size > 0; batch, size = c.processNextBatch() {
+	for batch, size := processNextBatch(c.config.ID, c.config.BatchSize); size > 0; batch, size = processNextBatch(c.config.ID, c.config.BatchSize) {
 		if !c.running {
 			log.Infof("action: stop_client | result: success | client_id: %v",
 				c.config.ID,
