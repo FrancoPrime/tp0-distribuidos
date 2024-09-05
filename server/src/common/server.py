@@ -1,8 +1,8 @@
 import socket
 import logging
 import os
+import multiprocessing
 from .communication import receive_message, send_message
-from threading import Thread, Lock
 from .utils import Bet, store_bets, load_bets, has_won, serialize_winners
 
 SuccessMessage = "success"
@@ -16,12 +16,15 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
-        self.bets_lock = Lock()
+
+        manager = multiprocessing.Manager()
+        self.bets_lock = manager.Lock()
+
         self.running = True
-        self.agencies = {}
-        for i in range(1, int(os.getenv('AGENCIES', 0)) + 1):
-            self.agencies[f"{i}"] = False
-        self.winners = []
+        self.shared_data = manager.dict({
+            'winners': [],
+            'agencies': {f"{i}": False for i in range(1, int(os.getenv('AGENCIES', 0)) + 1)}
+        })
 
     def run(self):
         """
@@ -29,23 +32,23 @@ class Server:
         communication with a client. After client with communucation
         finishes, servers starts to accept new connections again
         """
-        threads = []
+        processes = []
         while self.running:
             client_sock = self.__accept_new_connection()
             if not self.running:
                 logging.info('action: stop_server | result: success')
                 break
-            t = Thread(target = self.__handle_client_connection, args = (client_sock,))
-            t.start()
-            threads.append(t)
-        for t in threads:
-            t.join()
+            proc = multiprocessing.Process(target = self.__handle_client_connection, args = (client_sock,))
+            proc.start()
+            processes.append(proc)
+        for proc in processes:
+            proc.join()
 
     def __check_winners(self):
-        if all(value == True for value in self.agencies.values()):
+        if all(value == True for value in self.shared_data['agencies'].values()):
             logging.info('action: sorteo | result: success')
             bets = list(load_bets())
-            self.winners = [bet for bet in bets if has_won(bet)]
+            self.shared_data['winners'] = [bet for bet in bets if has_won(bet)]
 
     def __handle_client_connection(self, client_sock):
         """
@@ -61,7 +64,9 @@ class Server:
                 if msg.startswith(ExitMessage):
                     logging.debug('Agency finished')
                     with self.bets_lock:
-                        self.agencies[msg[len(ExitMessage):]] = True
+                        agencies = self.shared_data['agencies']
+                        agencies[msg[len(ExitMessage):]] = True
+                        self.shared_data['agencies'] = agencies
                         self.__check_winners()
                     break
                 
@@ -85,11 +90,11 @@ class Server:
             client_sock.close()
 
     def __process_winners_message(self, client_sock, agencyID):
-        if not all(value == True for value in self.agencies.values()):
+        if not all(value == True for value in self.shared_data['agencies'].values()):
             logging.info('action: winners_request | result: fail | error: agencies not finished')
             send_message(client_sock, ErrorMessage)
             return
-        agency_winners = [bet for bet in self.winners if bet.agency == int(agencyID)]
+        agency_winners = [bet for bet in self.shared_data['winners'] if bet.agency == int(agencyID)]
         send_message(client_sock, serialize_winners(agency_winners))
 
     def __accept_new_connection(self):
