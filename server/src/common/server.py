@@ -11,11 +11,12 @@ ErrorMessage = "error"
 WinnersMessage = "winners"
 
 class Server:
-    def __init__(self, port, listen_backlog):
+    def __init__(self, port, listen_backlog, pool_size):
         # Initialize server socket
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
+        self.pool_size = pool_size
 
         manager = multiprocessing.Manager()
         self.bets_lock = manager.Lock()
@@ -32,17 +33,15 @@ class Server:
         communication with a client. After client with communucation
         finishes, servers starts to accept new connections again
         """
-        processes = []
-        while self.running:
-            client_sock = self.__accept_new_connection()
-            if not self.running:
-                logging.info('action: stop_server | result: success')
-                break
-            proc = multiprocessing.Process(target = self.__handle_client_connection, args = (client_sock,))
-            proc.start()
-            processes.append(proc)
-        for proc in processes:
-            proc.join()
+        with multiprocessing.Pool(self.pool_size) as pool:
+            while self.running:
+                client_sock = self.__accept_new_connection()
+                if not self.running:
+                    logging.info('action: stop_server | result: success')
+                    break
+                pool.apply_async(func = self._handle_client_connection, args = (client_sock,))
+            pool.close()
+            pool.join()
 
     def __check_winners(self):
         if all(value == True for value in self.shared_data['agencies'].values()):
@@ -50,7 +49,7 @@ class Server:
             bets = list(load_bets())
             self.shared_data['winners'] = [bet for bet in bets if has_won(bet)]
 
-    def __handle_client_connection(self, client_sock):
+    def _handle_client_connection(self, client_sock):
         """
         Read message from a specific client socket and loops through their messages until receiving an exit message
 
